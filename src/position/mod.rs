@@ -179,32 +179,32 @@ impl Position {
                     let row_modifier: isize = ((color >> 3) as isize) * -2 + 1;
 
                     // Check if we're moving to the square in front of us
-                    if(self.state.board[TryInto::<usize>::try_into((i as isize + row_modifier * 8)).unwrap()].data == 0) {
-                        all_legal_moves.push((i as u8, ((i as isize + row_modifier * 8)).try_into().unwrap()));
+                    if(self.state.board[(i as isize + row_modifier * 8) as usize].data == 0) {
+                        all_legal_moves.push((i as u8, (i as isize + row_modifier * 8) as u8));
 
                         // Can we move 2 squares forward?
-                        let tmp: usize = ((i as isize + row_modifier * 16)).try_into().unwrap();
+                        let tmp: usize = (i as isize + row_modifier * 16) as usize;
                         if(tmp < self.state.board.len()) {
                             if(self.state.board[tmp].data == 0 && piece.data & 0b10000 == 0) {
-                                all_legal_moves.push((i as u8, ((i as isize + row_modifier * 16)).try_into().unwrap()));
+                                all_legal_moves.push((i as u8, (i as isize + row_modifier * 16) as u8));
                             }   
                         }
                     }
 
                     if((i % 8) != 7) {
-                        let index: usize = (i as isize + row_modifier * 8 + 1).try_into().unwrap();
+                        let index: usize = (i as isize + row_modifier * 8 + 1) as usize;
                         let square_at_index = &self.state.board[index];
                         let piece_color: u8 = square_at_index.data & 0b1000;
-                        if(square_at_index.data & 0b111 != 0 && piece_color ^ color == 1) {
+                        if(square_at_index.data & 0b111 != 0 && piece_color != color) {
                             all_legal_moves.push((i as u8, index as u8));
                         }
                     }
 
                     if((i % 8) != 0) {
-                        let index: usize = (i as isize + row_modifier * 8 - 1).try_into().unwrap();
+                        let index: usize = (i as isize + row_modifier * 8 - 1) as usize;
                         let square_at_index: &Piece = &self.state.board[index];
                         let piece_color: u8 = square_at_index.data & 0b1000;
-                        if(square_at_index.data & 0b111 != 0 && piece_color ^ color == 1) {
+                        if(square_at_index.data & 0b111 != 0 && piece_color != color) {
                             all_legal_moves.push((i as u8, index as u8));
                         }
                     }
@@ -369,7 +369,6 @@ impl Position {
             return arr;
         }
         if(self.state.board[tmp_square as usize].data & 0b111 != 0) {
-            // println!("{}^{} = {} at {}", self.state.board[tmp_square as usize].data & color, self.state.color as u8, ((self.state.board[tmp_square as usize].data & 0b1000) >> 3) ^ (self.state.color as u8), tmp_square);
             if((self.state.board[tmp_square as usize].data & 0b1000) >> 3 != self.state.color as u8) {
                 arr.push((origin_square as u8, tmp_square as u8));
                 return arr;
@@ -385,14 +384,12 @@ impl Position {
         let mut arr: Vec<(u8, u8)> = Vec::new();
         let mut tmp_square: isize = origin_square as isize;
         let mut modulo: isize = tmp_square % 8;
-        let color: u8 = (self.state.color as u8) << 3;
         while(modulo + 1 == tmp_square % 8 || modulo - 1 == tmp_square % 8 || modulo == tmp_square % 8) {
             modulo = tmp_square % 8;
             if(tmp_square < 0 || tmp_square >= 64) {
                 break;
             }
             if(self.state.board[tmp_square as usize].data & 0b111 != 0) {
-                println!("{}^{} = {} at {}", self.state.board[tmp_square as usize].data & color, self.state.color as u8, ((self.state.board[tmp_square as usize].data & 0b1000) >> 3) ^ (self.state.color as u8), tmp_square);
                 if(tmp_square == origin_square as isize) {
                     tmp_square += offset;
                     continue;
