@@ -160,7 +160,6 @@ impl Position {
     pub fn generate_legal_moves(&self) -> Vec<(u8, u8)> {
         let mut all_legal_moves: Vec<(u8, u8)> = Vec::new();
         let color: u8 = (self.state.color as u8) << 3;
-        dbg!(color);
 
         let mut piece_amounts: u8 = 0;
 
@@ -313,98 +312,104 @@ impl Position {
                 }
                 // BISHOPS
                 3 => {
-                    // up-right moves
-                    let mut tmp: usize = i;
-                    let mut old_tmp: usize = tmp;
-                    while(tmp < 64) {
-                        if((old_tmp % 8) - 1 == tmp % 8 || (old_tmp % 8) + 1 == tmp % 8 || old_tmp == tmp) {
-                            old_tmp = tmp;
-                        } else {
-                            break;
-                        }
-                        if(self.state.board[tmp].data & 0b111 == 0) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                        } else if(self.state.board[tmp].data & 0b1000 != color) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                            break;
-                        } else {
-                            break;
-                        }
-                        tmp += 9;
-                    }
-                    tmp = i;
-                    old_tmp = tmp;
-                    while(tmp < 64) {
-                        if((old_tmp % 8) - 1 == tmp % 8 || (old_tmp % 8) + 1 == tmp % 8 || old_tmp == tmp) {
-                            old_tmp = tmp;
-                        } else {
-                            break;
-                        }
-                        if(self.state.board[tmp].data & 0b111 == 0) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                        } else if(self.state.board[tmp].data & 0b1000 != color) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                            break;
-                        } else {
-                            break;
-                        }
-                        tmp += 7;
-                    }
-                    tmp = i;
-                    old_tmp = tmp;
-                    while(tmp < 64) {
-                        if((old_tmp % 8) - 1 == tmp % 8 || (old_tmp % 8) + 1 == tmp % 8 || old_tmp == tmp) {
-                            old_tmp = tmp;
-                        } else {
-                            break;
-                        }
-                        if(self.state.board[tmp].data & 0b111 == 0) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                        } else if(self.state.board[tmp].data & 0b1000 != color) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                            break;
-                        } else {
-                            break;
-                        }
-                        if(tmp < 7) {
-                            break;
-                        } else {
-                            tmp -= 7;
-                        }
-                    }
-                    tmp = i;
-                    old_tmp = tmp;
-                    while(tmp < 64) {
-                        if((old_tmp % 8) - 1 == tmp % 8 || (old_tmp % 8) + 1 == tmp % 8 || old_tmp == tmp) {
-                            old_tmp = tmp;
-                        } else {
-                            break;
-                        }
-                        if(self.state.board[tmp].data & 0b111 == 0) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                        } else if(self.state.board[tmp].data & 0b1000 != color) {
-                            all_legal_moves.push((i as u8, tmp as u8));
-                            break;
-                        } else {
-                            break;
-                        }
-                        if(tmp < 9) {
-                            break;
-                        } else {
-                            tmp -= 9;
-                        }
-                    }
+                    all_legal_moves.append(&mut self.generate_sliding_move(9, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(7, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-7, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-9, i));
+                }
+                // ROOKS
+                4 => {
+                    all_legal_moves.append(&mut self.generate_sliding_move(8, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(1, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-1, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-8, i));
+                }
+                // QUEENS
+                5 => {
+                    all_legal_moves.append(&mut self.generate_sliding_move(8, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(1, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-1, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-8, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(9, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(7, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-7, i));
+                    all_legal_moves.append(&mut self.generate_sliding_move(-9, i));
+                }
+                // KINGS
+                6 => {
+                    all_legal_moves.append(&mut self.generate_one_move(8, i));
+                    all_legal_moves.append(&mut self.generate_one_move(1, i));
+                    all_legal_moves.append(&mut self.generate_one_move(-1, i));
+                    all_legal_moves.append(&mut self.generate_one_move(-8, i));
+                    all_legal_moves.append(&mut self.generate_one_move(9, i));
+                    all_legal_moves.append(&mut self.generate_one_move(7, i));
+                    all_legal_moves.append(&mut self.generate_one_move(-7, i));
+                    all_legal_moves.append(&mut self.generate_one_move(-9, i));
                 }
                 _ => ()
             }
 
-            if(piece_amounts >= 16) {
+            if(piece_amounts > 15) {
                 // Stop the loop short if we have visited all pieces of a single color
                 break;
             }
         }
 
         return all_legal_moves;
+    }
+
+    fn generate_one_move(&self, offset: isize, origin_square: usize) -> Vec<(u8, u8)> {
+        let mut arr: Vec<(u8, u8)> = Vec::new();
+        let tmp_square: isize = origin_square as isize + offset;
+        let modulo: isize = origin_square as isize % 8;
+        if(!(modulo + 1 == tmp_square % 8 || modulo - 1 == tmp_square % 8 || modulo == tmp_square % 8)) {
+            return arr;
+        }
+        if(tmp_square < 0 || tmp_square >= 64) {
+            return arr;
+        }
+        if(self.state.board[tmp_square as usize].data & 0b111 != 0) {
+            // println!("{}^{} = {} at {}", self.state.board[tmp_square as usize].data & color, self.state.color as u8, ((self.state.board[tmp_square as usize].data & 0b1000) >> 3) ^ (self.state.color as u8), tmp_square);
+            if((self.state.board[tmp_square as usize].data & 0b1000) >> 3 != self.state.color as u8) {
+                arr.push((origin_square as u8, tmp_square as u8));
+                return arr;
+            } else {
+                return arr;
+            }
+        }
+        arr.push((origin_square as u8, tmp_square as u8));
+        return arr;
+    }
+
+    fn generate_sliding_move(&self, offset: isize, origin_square: usize) -> Vec<(u8, u8)> {
+        let mut arr: Vec<(u8, u8)> = Vec::new();
+        let mut tmp_square: isize = origin_square as isize;
+        let mut modulo: isize = tmp_square % 8;
+        let color: u8 = (self.state.color as u8) << 3;
+        while(modulo + 1 == tmp_square % 8 || modulo - 1 == tmp_square % 8 || modulo == tmp_square % 8) {
+            modulo = tmp_square % 8;
+            if(tmp_square < 0 || tmp_square >= 64) {
+                break;
+            }
+            if(self.state.board[tmp_square as usize].data & 0b111 != 0) {
+                println!("{}^{} = {} at {}", self.state.board[tmp_square as usize].data & color, self.state.color as u8, ((self.state.board[tmp_square as usize].data & 0b1000) >> 3) ^ (self.state.color as u8), tmp_square);
+                if(tmp_square == origin_square as isize) {
+                    tmp_square += offset;
+                    continue;
+                }
+                if((self.state.board[tmp_square as usize].data & 0b1000) >> 3 != self.state.color as u8) {
+                    arr.push((origin_square as u8, tmp_square as u8));
+                    break;
+                } else {
+                    break;
+                }
+            }
+            if(tmp_square != origin_square as isize) {
+                arr.push((origin_square as u8, tmp_square as u8));
+            }
+            tmp_square += offset;
+        }
+        return arr;
     }
 }
 
