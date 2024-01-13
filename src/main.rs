@@ -6,7 +6,7 @@ pub mod position;
 use d::display;
 use position::Position;
 
-fn main() {
+fn main() -> std::process::ExitCode {
     let mut x: String = String::new();
     let mut current_position: Position = Position::new();
     current_position.state.to_string();
@@ -37,7 +37,10 @@ fn main() {
                     if(&cleaned_vec[move_start_index] == "moves") {
                         for proposed_move in &cleaned_vec[(move_start_index + 1)..] {
                             if(proposed_move == &String::from("!")) {
-                                current_position.unmake_move();
+                                match(current_position.unmake_move()) {
+                                    Ok(_) => (),
+                                    Err(e) => return std::process::ExitCode::from(e),
+                                };
                                 continue;
                             }
                             let mut move_parts: Vec<String> = proposed_move.chars()
@@ -52,7 +55,7 @@ fn main() {
 
                             match(current_position.make_move(&move_parts[0], &move_parts[1], &move_parts[2])) {
                                 Ok(_) => (),
-                                Err(e) => eprintln!("{}", e),
+                                Err(e) => return std::process::ExitCode::from(e),
                             }
                         }
                     }
@@ -70,9 +73,9 @@ fn main() {
                     _ => ()
                 };
             }
-            "quit" => return,
+            "quit" | "exit" => return std::process::ExitCode::SUCCESS,
             _ => {
-                println!("Unknown command: '{}'. Type help for more information.", &cmd);
+                println!("Unknown command: '{}'. Type help for more information.", cmd);
             }
         }
         x = String::new();

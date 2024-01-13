@@ -27,7 +27,7 @@ impl Position {
         };
     }
 
-    pub fn make_move(&mut self, origin: &str, target: &str, promotion: &str) -> Result<(), String> {
+    pub fn make_move(&mut self, origin: &str, target: &str, promotion: &str) -> Result<u8, u8> {
 
         let origin_as_u8: u8 = parse_square(origin);
         let target_as_u8: u8 = parse_square(target);
@@ -43,7 +43,7 @@ impl Position {
         let legal_moves: Vec<(u8, u8)> = self.generate_legal_moves();
         
         if(!legal_moves.contains(&(origin_as_u8, target_as_u8))) {
-            return Err(format!("{}{} ({:2}-{:2}) is not a legal move!", origin, target, origin_as_u8, target_as_u8));
+            return Err(1);
         }
 
         let old_board: ParsedFEN = self.state.clone();
@@ -142,19 +142,28 @@ impl Position {
         self.fen = self.state.to_string();
 
         self.old_position = Some(old_board);
-        return Ok(());
+        return Ok(0);
     }
 
-    pub fn unmake_move(&mut self) {
+    pub fn unmake_move(&mut self) -> Result<u8, u8> {
+        let code: u8;
         self.state = match(&self.old_position) {
-            Some(old_state) => old_state.clone(),
+            Some(old_state) => {
+                code = 0;
+                old_state.clone()
+            },
             None => {
-                eprintln!("Cannot unmake move: No former state found!");
+                code = 1;
                 self.state.clone()
             }
         };
         self.old_position = None;
         self.fen = self.state.to_string();
+        if(code == 0) {
+            return Ok(0);
+        } else  {
+            return Err(code);
+        }
     }
 
     pub fn generate_legal_moves(&self) -> Vec<(u8, u8)> {
